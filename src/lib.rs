@@ -6,7 +6,8 @@ use std::fs::File;
 
 #[cfg(target_os="linux")]
 use std::fs::read_link;
-#[cfg(target_os="linux")]
+
+#[cfg(unix)]
 use std::os::unix::io::AsRawFd;
 
 #[cfg(not(target_os="linux"))]
