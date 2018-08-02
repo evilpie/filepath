@@ -4,6 +4,8 @@ version = "0.1.0"
 authors = ["Tom Schuster <evilpies@gmail.com>"]
 categories = ["filesystem"]
 keywords = ["path", "file"]
+license = "Apache-2.0/MIT"
+readme = "./README.md"
 
 [target.'cfg(target_os="macos")'.dependencies]
 libc = "0.2"
