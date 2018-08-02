@@ -2,9 +2,9 @@ use std::path::{Path, PathBuf};
 use std::io::Result;
 use std::fs::File;
 
-#[cfg(unix)]
+#[cfg(target_os="linux")]
 use std::fs::read_link;
-#[cfg(unix)]
+#[cfg(target_os="linux")]
 use std::os::unix::io::AsRawFd;
 
 /// An extension trait for `std::fs::File` providing an `path` method.
@@ -17,7 +17,7 @@ pub trait FilePath {
 }
 
 impl FilePath for File {
-    #[cfg(unix)]
+    #[cfg(target_os="linux")]
     fn path(&self) -> Result<PathBuf> {
         let fd = self.as_raw_fd();
         let path = Path::new("/proc/self/fd/").join(fd.to_string());
