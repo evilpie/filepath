@@ -6,6 +6,7 @@ categories = ["filesystem"]
 keywords = ["path", "file"]
 license = "Apache-2.0/MIT"
 readme = "./README.md"
+repository = "https://github.com/evilpie/filepath"
 
 [target.'cfg(target_os="macos")'.dependencies]
 libc = "0.2"
