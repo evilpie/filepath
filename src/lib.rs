@@ -42,7 +42,8 @@ impl FilePath for File {
             if len < 0 {
                 return Err(io::Error::last_os_error());
             }
-            Ok(PathBuf::from(OsString::from_vec(path[.. len as usize].to_vec())))
+            path.retain(|&c| c != 0);
+            Ok(PathBuf::from(OsString::from_vec(path)))
         }
     }
 
