@@ -1,0 +1,8 @@
+[package]
+name = "filepath"
+version = "0.1.0"
+authors = ["Tom Schuster <evilpies@gmail.com>"]
+categories = ["filesystem"]
+keywords = ["path", "file"]
+
+[dependencies]
