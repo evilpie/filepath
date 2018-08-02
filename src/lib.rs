@@ -38,14 +38,12 @@ impl FilePath for File {
         let mut path = vec![0; libc::PATH_MAX as usize + 1];
 
         unsafe {
-            let res = libc::fcntl(fd, 50, path.as_mut_ptr());
-            if res < 0 {
+            let len = libc::fcntl(fd, 50, path.as_mut_ptr());
+            if len < 0 {
                 return Err(io::Error::last_os_error());
             }
+            Ok(PathBuf::from(OsString::from_vec(path[.. len as usize].to_vec())))
         }
-
-        println!("{:?}", path);
-        Ok(PathBuf::from(OsString::from_vec(path)))
     }
 
     #[cfg(windows)]
