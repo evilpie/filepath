@@ -5,5 +5,5 @@ authors = ["Tom Schuster <evilpies@gmail.com>"]
 categories = ["filesystem"]
 keywords = ["path", "file"]
 
-[dependencies]
+[target.'cfg(target_os="macos")'.dependencies]
 libc = "0.2"

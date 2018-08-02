@@ -1,3 +1,4 @@
+#[cfg(target_os="macos")]
 extern crate libc;
 
 use std::path::{Path, PathBuf};
@@ -67,13 +68,15 @@ impl FilePath for File {
 
 #[cfg(test)]
 mod tests {
-    use std::path::PathBuf;
-    use std::fs::File;
+    use std::env;
+    use std::fs;
+
     use FilePath;
 
     #[test]
     fn simple() {
-        let file = File::open("/tmp/foobar").unwrap();
-        assert_eq!(file.path().unwrap(), PathBuf::from(r"/tmp/foobar"));
+        let file = fs::File::create("foobar").unwrap();
+        assert_eq!(file.path().unwrap(), env::current_dir().unwrap().join(r"foobar"));
+        fs::remove_file("foobar").unwrap();
     }
 }
