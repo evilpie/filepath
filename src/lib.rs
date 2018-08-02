@@ -33,12 +33,25 @@ use winapi::um::fileapi;
 #[cfg(target_os="macos")]
 const F_GETPATH : i32 = 50;
 
-/// An extension trait for `std::fs::File` providing an `path` method.
-///
-/// See the module documentation for examples.
+/// An extension trait for `std::fs::File` providing a `path` method.
 pub trait FilePath {
-    // Returns the path this file points to.
-    // Not every file has a path and the path could be outdated.
+    /// Returns the path of this file.
+    ///
+    /// The path might be wrong for example after moving a file.
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// use std::fs::File;
+    /// use std::io;
+    /// use filepath::FilePath;
+    ///
+    /// fn main() -> io::Result<()> {
+    ///     let file = File::open("some_file")?;
+    ///     let path = file.path()?;
+    ///     Ok(())
+    /// }
+    /// ```
     fn path(&self) -> io::Result<PathBuf>;
 }
 
@@ -108,5 +121,6 @@ mod tests {
         file2.read_to_string(&mut buffer).unwrap();
 
         assert_eq!(buffer, "abc");
+        remove_file("bar").unwrap();
     }
 }
