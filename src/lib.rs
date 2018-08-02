@@ -8,6 +8,8 @@ use std::path::Path;
 use std::path::PathBuf;
 use std::io;
 use std::fs::File;
+#[cfg(windows)]
+use std::ptr;
 
 #[cfg(target_os="linux")]
 use std::fs::read_link;
@@ -25,8 +27,6 @@ use std::os::unix::ffi::OsStringExt;
 #[cfg(windows)]
 use std::os::windows::prelude::*;
 
-#[cfg(windows)]
-use winapi::shared::minwindef::MAX_PATH;
 #[cfg(windows)]
 use winapi::um::fileapi;
 
@@ -80,20 +80,26 @@ impl FilePath for File {
 
     #[cfg(windows)]
     fn path(&self) -> io::Result<PathBuf> {
-        let mut path = vec![0; MAX_PATH + 1];
-
         unsafe {
-            let len = fileapi::GetFinalPathNameByHandleW(self.as_raw_handle(),
-                                                         path.as_mut_ptr(),
-                                                         path.len() as u32 - 1,
-                                                         0);
+            // Call with null to get the required size.
+            let len = fileapi::GetFinalPathNameByHandleW(self.as_raw_handle(), ptr::null_mut(), 0, 0);
             if len == 0 {
                 return Err(io::Error::last_os_error());
             }
-            path.truncate(len as usize);
-        }
 
-        Ok(PathBuf::from(OsString::from_wide(&path)))
+            let mut path = Vec::with_capacity(len as usize + 1);
+            let len2 = fileapi::GetFinalPathNameByHandleW(self.as_raw_handle(), path.as_mut_ptr(), len, 0);
+            if len2 == 0 {
+                return Err(io::Error::last_os_error());
+            }
+
+            // The first call should return the length including the terminating null character,
+            // the second without it!
+            assert_eq!(len2 + 1, len);
+
+            path.set_len(len2 as usize);
+            Ok(PathBuf::from(OsString::from_wide(&path)))
+        }
     }
 }
 
