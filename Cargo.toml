@@ -6,3 +6,4 @@ categories = ["filesystem"]
 keywords = ["path", "file"]
 
 [dependencies]
+libc = "0.2"
