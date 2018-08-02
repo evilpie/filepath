@@ -98,7 +98,6 @@ impl FilePath for File {
             assert_eq!(len2 + 1, len);
             path.set_len(len2 as usize);
 
-
             // Turn the \\?\UNC\ network path prefix into \\.
             let prefix = ['\\' as _, '\\' as _, '?' as _, '\\' as _, 'U' as _, 'N' as _, 'C' as _,
                           '\\' as _];
