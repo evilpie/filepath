@@ -86,13 +86,27 @@ impl FilePath for File {
 
 #[cfg(test)]
 mod tests {
-    use std::fs;
+    use std::io::prelude::*;
+    use std::fs::{remove_file, File};
     use FilePath;
 
     #[test]
     fn simple() {
-        let file = fs::File::create("foobar").unwrap();
+        let file = File::create("foobar").unwrap();
         assert_eq!(file.path().unwrap().file_name().unwrap(), "foobar");
-        fs::remove_file("foobar").unwrap();
+        remove_file("foobar").unwrap();
+    }
+
+    #[test]
+    fn roundtrip() {
+        let mut file = File::create("bar").unwrap();
+        file.write(b"abc").unwrap();
+        file.flush().unwrap();
+
+        let mut file2 = File::open(file.path().unwrap()).unwrap();
+        let mut buffer = String::new();
+        file2.read_to_string(&mut buffer).unwrap();
+
+        assert_eq!(buffer, "abc");
     }
 }
