@@ -1,3 +1,8 @@
+//! # filepath
+//!
+//! `filepath` contains an extension trait for `std::fs::File` providing a `path` method.
+//!
+
 #[cfg(target_os="macos")]
 extern crate libc;
 #[cfg(windows)]
