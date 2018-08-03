@@ -44,6 +44,10 @@ pub trait FilePath {
     ///
     /// The path might be wrong for example after moving a file.
     ///
+    /// # Platform-specific behavior
+    /// This function currently uses `/proc/self/fd/` on Linux, `fcntl` with `F_GETPATH` on macOS
+    /// and `GetFinalPathNameByHandle` on Windows.
+    ///
     /// # Examples
     ///
     /// ```no_run
