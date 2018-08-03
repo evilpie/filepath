@@ -101,7 +101,9 @@ impl FilePath for File {
         if len2 == 0 || len2 >= len {
             return Err(io::Error::last_os_error());
         }
-        path.set_len(len2 as usize);
+        unsafe {
+            path.set_len(len2 as usize);
+        }
 
         // Turn the \\?\UNC\ network path prefix into \\.
         let prefix = ['\\' as _, '\\' as _, '?' as _, '\\' as _, 'U' as _, 'N' as _, 'C' as _,
