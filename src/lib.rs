@@ -85,41 +85,40 @@ impl FilePath for File {
 
     #[cfg(windows)]
     fn path(&self) -> io::Result<PathBuf> {
-        unsafe {
-            // Call with null to get the required size.
-            let len = fileapi::GetFinalPathNameByHandleW(self.as_raw_handle(), ptr::null_mut(), 0, 0);
-            if len == 0 {
-                return Err(io::Error::last_os_error());
-            }
-
-            let mut path = Vec::with_capacity(len as usize + 1);
-            let len2 = fileapi::GetFinalPathNameByHandleW(self.as_raw_handle(), path.as_mut_ptr(), len, 0);
-            if len2 == 0 {
-                return Err(io::Error::last_os_error());
-            }
-
-            // The first call should return the length including the terminating null character,
-            // the second without it!
-            assert_eq!(len2 + 1, len);
-            path.set_len(len2 as usize);
-
-            // Turn the \\?\UNC\ network path prefix into \\.
-            let prefix = ['\\' as _, '\\' as _, '?' as _, '\\' as _, 'U' as _, 'N' as _, 'C' as _,
-                          '\\' as _];
-            if path.starts_with(&prefix) {
-                let mut network_path: Vec<u16> = vec!['\\' as u16, '\\' as u16];
-                network_path.extend_from_slice(&path[prefix.len() ..]);
-                return Ok(PathBuf::from(OsString::from_wide(&network_path)));
-            }
-
-            // Remove the \\?\ prefix.
-            let prefix = ['\\' as _, '\\' as _, '?' as _, '\\' as _];
-            if path.starts_with(&prefix) {
-                return Ok(PathBuf::from(OsString::from_wide(&path[prefix.len() ..])));
-            }
-
-            Ok(PathBuf::from(OsString::from_wide(&path)))
+        // Call with null to get the required size.
+        let len = unsafe {
+            fileapi::GetFinalPathNameByHandleW(self.as_raw_handle(), ptr::null_mut(), 0, 0)
+        };
+        if len == 0 {
+            return Err(io::Error::last_os_error());
         }
+
+        let mut path = Vec::with_capacity(len as usize);
+        let len2 = unsafe {
+            fileapi::GetFinalPathNameByHandleW(self.as_raw_handle(), path.as_mut_ptr(), len, 0)
+        };
+        // Handle unlikely case that path length changed between those two calls.
+        if len2 == 0 || len2 >= len {
+            return Err(io::Error::last_os_error());
+        }
+        path.set_len(len2 as usize);
+
+        // Turn the \\?\UNC\ network path prefix into \\.
+        let prefix = ['\\' as _, '\\' as _, '?' as _, '\\' as _, 'U' as _, 'N' as _, 'C' as _,
+                      '\\' as _];
+        if path.starts_with(&prefix) {
+            let mut network_path: Vec<u16> = vec!['\\' as u16, '\\' as u16];
+            network_path.extend_from_slice(&path[prefix.len() ..]);
+            return Ok(PathBuf::from(OsString::from_wide(&network_path)));
+        }
+
+        // Remove the \\?\ prefix.
+        let prefix = ['\\' as _, '\\' as _, '?' as _, '\\' as _];
+        if path.starts_with(&prefix) {
+            return Ok(PathBuf::from(OsString::from_wide(&path[prefix.len() ..])));
+        }
+
+        Ok(PathBuf::from(OsString::from_wide(&path)))
     }
 }
 
