@@ -98,15 +98,13 @@ impl FilePath for File {
         }
 
         let mut path = Vec::with_capacity(len as usize);
-        unsafe {
-            let len2 = fileapi::GetFinalPathNameByHandleW(self.as_raw_handle(), path.as_mut_ptr(),
-                                                          len, 0);
-            // Handle unlikely case that path length changed between those two calls.
-            if len2 == 0 || len2 >= len {
-                return Err(io::Error::last_os_error());
-            }
-            path.set_len(len2 as usize);
+        let len2 = unsafe { fileapi::GetFinalPathNameByHandleW(self.as_raw_handle(), path.as_mut_ptr(),
+                                                        len, 0) };
+        // Handle unlikely case that path length changed between those two calls.
+        if len2 == 0 || len2 >= len {
+            return Err(io::Error::last_os_error());
         }
+        unsafe { path.set_len(len2 as usize) };
 
         // Turn the \\?\UNC\ network path prefix into \\.
         let prefix = ['\\' as _, '\\' as _, '?' as _, '\\' as _, 'U' as _, 'N' as _, 'C' as _,
