@@ -3,20 +3,20 @@
 //! `filepath` contains an extension trait for `std::fs::File` providing a `path` method.
 //!
 
-#[cfg(target_os="macos")]
+#[cfg(target_os = "macos")]
 extern crate libc;
 #[cfg(windows)]
 extern crate winapi;
 
-#[cfg(target_os="linux")]
+use std::fs::File;
+use std::io;
+#[cfg(target_os = "linux")]
 use std::path::Path;
 use std::path::PathBuf;
-use std::io;
-use std::fs::File;
 #[cfg(windows)]
 use std::ptr;
 
-#[cfg(target_os="linux")]
+#[cfg(target_os = "linux")]
 use std::fs::read_link;
 
 #[cfg(unix)]
@@ -24,10 +24,10 @@ use std::os::unix::io::AsRawFd;
 #[cfg(windows)]
 use std::os::windows::io::AsRawHandle;
 
-#[cfg(any(target_os="macos", windows))]
+#[cfg(any(target_os = "macos", windows))]
 use std::ffi::OsString;
 
-#[cfg(target_os="macos")]
+#[cfg(target_os = "macos")]
 use std::os::unix::ffi::OsStringExt;
 #[cfg(windows)]
 use std::os::windows::prelude::*;
@@ -35,8 +35,8 @@ use std::os::windows::prelude::*;
 #[cfg(windows)]
 use winapi::um::fileapi;
 
-#[cfg(target_os="macos")]
-const F_GETPATH : i32 = 50;
+#[cfg(target_os = "macos")]
+const F_GETPATH: i32 = 50;
 
 /// An extension trait for `std::fs::File` providing a `path` method.
 pub trait FilePath {
@@ -65,14 +65,14 @@ pub trait FilePath {
 }
 
 impl FilePath for File {
-    #[cfg(target_os="linux")]
+    #[cfg(target_os = "linux")]
     fn path(&self) -> io::Result<PathBuf> {
         let fd = self.as_raw_fd();
         let path = Path::new("/proc/self/fd/").join(fd.to_string());
         read_link(path)
     }
 
-    #[cfg(target_os="macos")]
+    #[cfg(target_os = "macos")]
     fn path(&self) -> io::Result<PathBuf> {
         let fd = self.as_raw_fd();
         let mut path = vec![0; libc::PATH_MAX as usize + 1];
@@ -98,8 +98,9 @@ impl FilePath for File {
         }
 
         let mut path = Vec::with_capacity(len as usize);
-        let len2 = unsafe { fileapi::GetFinalPathNameByHandleW(self.as_raw_handle(), path.as_mut_ptr(),
-                                                        len, 0) };
+        let len2 = unsafe {
+            fileapi::GetFinalPathNameByHandleW(self.as_raw_handle(), path.as_mut_ptr(), len, 0)
+        };
         // Handle unlikely case that path length changed between those two calls.
         if len2 == 0 || len2 >= len {
             return Err(io::Error::last_os_error());
@@ -107,18 +108,19 @@ impl FilePath for File {
         unsafe { path.set_len(len2 as usize) };
 
         // Turn the \\?\UNC\ network path prefix into \\.
-        let prefix = ['\\' as _, '\\' as _, '?' as _, '\\' as _, 'U' as _, 'N' as _, 'C' as _,
-                      '\\' as _];
+        let prefix = [
+            '\\' as _, '\\' as _, '?' as _, '\\' as _, 'U' as _, 'N' as _, 'C' as _, '\\' as _,
+        ];
         if path.starts_with(&prefix) {
             let mut network_path: Vec<u16> = vec!['\\' as u16, '\\' as u16];
-            network_path.extend_from_slice(&path[prefix.len() ..]);
+            network_path.extend_from_slice(&path[prefix.len()..]);
             return Ok(PathBuf::from(OsString::from_wide(&network_path)));
         }
 
         // Remove the \\?\ prefix.
         let prefix = ['\\' as _, '\\' as _, '?' as _, '\\' as _];
         if path.starts_with(&prefix) {
-            return Ok(PathBuf::from(OsString::from_wide(&path[prefix.len() ..])));
+            return Ok(PathBuf::from(OsString::from_wide(&path[prefix.len()..])));
         }
 
         Ok(PathBuf::from(OsString::from_wide(&path)))
@@ -127,8 +129,8 @@ impl FilePath for File {
 
 #[cfg(test)]
 mod tests {
-    use std::io::prelude::*;
     use std::fs::{remove_file, File};
+    use std::io::prelude::*;
     use FilePath;
 
     #[test]
