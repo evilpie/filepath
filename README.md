@@ -8,7 +8,7 @@ A simple extension trait for `File` that provides a single method `path`, which 
 
 **Note**: Not every file has a path. The path might be wrong for example after moving a file.
 
-OS support: Linux, Mac, Windows
+OS support: Linux, Mac, Windows and iOS
 
 ```rust
 use std::fs::File;
