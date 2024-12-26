@@ -5,34 +5,10 @@
 
 use std::fs::File;
 use std::io;
-#[cfg(target_os = "linux")]
-use std::path::Path;
 use std::path::PathBuf;
-
-#[cfg(target_os = "linux")]
-use std::fs::read_link;
 
 #[cfg(unix)]
 use std::os::unix::io::AsRawFd;
-#[cfg(windows)]
-use std::os::windows::io::AsRawHandle;
-
-#[cfg(any(target_os = "macos", target_os = "ios", windows))]
-use std::ffi::OsString;
-
-#[cfg(any(target_os = "macos", target_os = "ios"))]
-use std::os::unix::ffi::OsStringExt;
-#[cfg(windows)]
-use std::os::windows::prelude::*;
-
-#[cfg(windows)]
-use windows::Win32::{
-    Foundation,
-    Storage::FileSystem::{GetFinalPathNameByHandleW, GETFINALPATHNAMEBYHANDLE_FLAGS},
-};
-
-#[cfg(any(target_os = "macos", target_os = "ios"))]
-const F_GETPATH: i32 = 50;
 
 /// An extension trait for `std::fs::File` providing a `path` method.
 pub trait FilePath {
@@ -63,13 +39,19 @@ pub trait FilePath {
 impl FilePath for File {
     #[cfg(target_os = "linux")]
     fn path(&self) -> io::Result<PathBuf> {
+        use std::path::Path;
+
         let fd = self.as_raw_fd();
         let path = Path::new("/proc/self/fd/").join(fd.to_string());
-        read_link(path)
+        std::fs::read_link(path)
     }
 
     #[cfg(any(target_os = "macos", target_os = "ios"))]
     fn path(&self) -> io::Result<PathBuf> {
+        use std::ffi::OsString;
+        use std::os::unix::ffi::OsStringExt;
+        const F_GETPATH: i32 = 50;
+
         let fd = self.as_raw_fd();
         let mut path = vec![0; libc::PATH_MAX as usize + 1];
 
@@ -84,7 +66,13 @@ impl FilePath for File {
     }
 
     #[cfg(windows)]
-    fn path(&self) -> io::Result<PathBuf> {
+    fn path(&self) -> std::io::Result<PathBuf> {
+        use std::os::windows::{ffi::OsStringExt, io::AsRawHandle};
+        use windows::Win32::{
+            Foundation,
+            Storage::FileSystem::{GetFinalPathNameByHandleW, GETFINALPATHNAMEBYHANDLE_FLAGS},
+        };
+
         // Call with null to get the required size.
         let len = unsafe {
             let handle = Foundation::HANDLE(self.as_raw_handle());

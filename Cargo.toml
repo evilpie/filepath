@@ -14,7 +14,7 @@ edition = "2021"
 libc = "0.2"
 
 [target.'cfg(target_os="ios")'.dependencies]
-libc = {version = "0.2", default-features = false}
+libc = { version = "0.2", default-features = false }
 
 [target.'cfg(windows)'.dependencies]
 windows = { version = "0.58.0", features = ["Win32_Storage_FileSystem"] }
