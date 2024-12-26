@@ -3,7 +3,7 @@
 //! `filepath` contains an extension trait for `std::fs::File` providing a `path` method.
 //!
 
-#[cfg(target_os = "macos")]
+#[cfg(any(target_os = "macos", target_os = "ios"))]
 extern crate libc;
 #[cfg(windows)]
 extern crate winapi;
@@ -24,10 +24,10 @@ use std::os::unix::io::AsRawFd;
 #[cfg(windows)]
 use std::os::windows::io::AsRawHandle;
 
-#[cfg(any(target_os = "macos", windows))]
+#[cfg(any(target_os = "macos", target_os = "ios", windows))]
 use std::ffi::OsString;
 
-#[cfg(target_os = "macos")]
+#[cfg(any(target_os = "macos", target_os = "ios"))]
 use std::os::unix::ffi::OsStringExt;
 #[cfg(windows)]
 use std::os::windows::prelude::*;
@@ -35,7 +35,7 @@ use std::os::windows::prelude::*;
 #[cfg(windows)]
 use winapi::um::fileapi;
 
-#[cfg(target_os = "macos")]
+#[cfg(any(target_os = "macos", target_os = "ios"))]
 const F_GETPATH: i32 = 50;
 
 /// An extension trait for `std::fs::File` providing a `path` method.
@@ -72,7 +72,7 @@ impl FilePath for File {
         read_link(path)
     }
 
-    #[cfg(target_os = "macos")]
+    #[cfg(any(target_os = "macos", target_os = "ios"))]
     fn path(&self) -> io::Result<PathBuf> {
         let fd = self.as_raw_fd();
         let mut path = vec![0; libc::PATH_MAX as usize + 1];
