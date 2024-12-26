@@ -3,18 +3,11 @@
 //! `filepath` contains an extension trait for `std::fs::File` providing a `path` method.
 //!
 
-#[cfg(any(target_os = "macos", target_os = "ios"))]
-extern crate libc;
-#[cfg(windows)]
-extern crate winapi;
-
 use std::fs::File;
 use std::io;
 #[cfg(target_os = "linux")]
 use std::path::Path;
 use std::path::PathBuf;
-#[cfg(windows)]
-use std::ptr;
 
 #[cfg(target_os = "linux")]
 use std::fs::read_link;
@@ -33,7 +26,10 @@ use std::os::unix::ffi::OsStringExt;
 use std::os::windows::prelude::*;
 
 #[cfg(windows)]
-use winapi::um::fileapi;
+use windows::Win32::{
+    Foundation,
+    Storage::FileSystem::{GetFinalPathNameByHandleW, GETFINALPATHNAMEBYHANDLE_FLAGS},
+};
 
 #[cfg(any(target_os = "macos", target_os = "ios"))]
 const F_GETPATH: i32 = 50;
@@ -91,7 +87,8 @@ impl FilePath for File {
     fn path(&self) -> io::Result<PathBuf> {
         // Call with null to get the required size.
         let len = unsafe {
-            fileapi::GetFinalPathNameByHandleW(self.as_raw_handle(), ptr::null_mut(), 0, 0)
+            let handle = Foundation::HANDLE(self.as_raw_handle());
+            GetFinalPathNameByHandleW(handle, &mut [], GETFINALPATHNAMEBYHANDLE_FLAGS(0))
         };
         if len == 0 {
             return Err(io::Error::last_os_error());
@@ -99,7 +96,8 @@ impl FilePath for File {
 
         let mut path = Vec::with_capacity(len as usize);
         let len2 = unsafe {
-            fileapi::GetFinalPathNameByHandleW(self.as_raw_handle(), path.as_mut_ptr(), len, 0)
+            let handle = Foundation::HANDLE(self.as_raw_handle());
+            GetFinalPathNameByHandleW(handle, &mut path, GETFINALPATHNAMEBYHANDLE_FLAGS(0))
         };
         // Handle unlikely case that path length changed between those two calls.
         if len2 == 0 || len2 >= len {
@@ -129,9 +127,9 @@ impl FilePath for File {
 
 #[cfg(test)]
 mod tests {
+    use crate::FilePath;
     use std::fs::{remove_file, File};
     use std::io::prelude::*;
-    use FilePath;
 
     #[test]
     fn simple() {
