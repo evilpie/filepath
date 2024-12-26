@@ -67,6 +67,7 @@ impl FilePath for File {
 
     #[cfg(windows)]
     fn path(&self) -> std::io::Result<PathBuf> {
+        use std::ffi::OsString;
         use std::os::windows::{ffi::OsStringExt, io::AsRawHandle};
         use windows::Win32::{
             Foundation,
@@ -82,7 +83,7 @@ impl FilePath for File {
             return Err(io::Error::last_os_error());
         }
 
-        let mut path = Vec::with_capacity(len as usize);
+        let mut path = vec![0; len as usize];
         let len2 = unsafe {
             let handle = Foundation::HANDLE(self.as_raw_handle());
             GetFinalPathNameByHandleW(handle, &mut path, GETFINALPATHNAMEBYHANDLE_FLAGS(0))
@@ -91,7 +92,7 @@ impl FilePath for File {
         if len2 == 0 || len2 >= len {
             return Err(io::Error::last_os_error());
         }
-        unsafe { path.set_len(len2 as usize) };
+        path.truncate(len2 as usize);
 
         // Turn the \\?\UNC\ network path prefix into \\.
         let prefix = [
