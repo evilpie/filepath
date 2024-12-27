@@ -50,13 +50,12 @@ impl FilePath for File {
     fn path(&self) -> io::Result<PathBuf> {
         use std::ffi::OsString;
         use std::os::unix::ffi::OsStringExt;
-        const F_GETPATH: i32 = 50;
 
         let fd = self.as_raw_fd();
         let mut path = vec![0; libc::PATH_MAX as usize + 1];
 
         unsafe {
-            if libc::fcntl(fd, F_GETPATH, path.as_mut_ptr()) < 0 {
+            if libc::fcntl(fd, libc::F_GETPATH, path.as_mut_ptr()) < 0 {
                 return Err(io::Error::last_os_error());
             }
         }
