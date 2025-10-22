@@ -37,7 +37,7 @@ pub trait FilePath {
 }
 
 impl FilePath for File {
-    #[cfg(target_os = "linux")]
+    #[cfg(any(target_os = "linux", target_os = "android"))]
     fn path(&self) -> io::Result<PathBuf> {
         use std::path::Path;
 
